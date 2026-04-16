@@ -8,21 +8,9 @@
         "maxLambdaSize": "50mb",
         "runtime": "python3.11"
       }
-    },
-    {
-      "src": "build_files.sh",
-      "use": "@vercel/static-build",
-      "config": {
-        "distDir": "codeshare/staticfiles"
-      }
     }
   ],
   "routes": [
-    {
-      "src": "/static/(.*)",
-      "headers": { "cache-control": "public, max-age=31536000, immutable" },
-      "dest": "/static/$1"
-    },
     {
       "src": "/(.*)",
       "dest": "/api/index.py"
