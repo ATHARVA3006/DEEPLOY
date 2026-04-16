@@ -24,10 +24,26 @@ ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='*').split(',')
 
 CSRF_TRUSTED_ORIGINS = config(
     'CSRF_TRUSTED_ORIGINS',
-    default='https://*.railway.app,https://*.up.railway.app,https://*.vercel.app,http://localhost:8000,http://127.0.0.1:8000'
+    default='https://*.vercel.app,http://localhost:8000,http://127.0.0.1:8000'
 ).split(',')
 
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+# ── Cloudinary for file storage ──
+CLOUDINARY_CLOUD_NAME   = config('CLOUDINARY_CLOUD_NAME', default='')
+CLOUDINARY_API_KEY      = config('CLOUDINARY_API_KEY', default='')
+CLOUDINARY_API_SECRET   = config('CLOUDINARY_API_SECRET', default='')
+
+USE_CLOUDINARY = bool(CLOUDINARY_CLOUD_NAME and CLOUDINARY_API_KEY and CLOUDINARY_API_SECRET)
+
+if USE_CLOUDINARY:
+    import cloudinary
+    cloudinary.config(
+        cloud_name=CLOUDINARY_CLOUD_NAME,
+        api_key=CLOUDINARY_API_KEY,
+        api_secret=CLOUDINARY_API_SECRET,
+        secure=True,
+    )
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -38,6 +54,9 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'repository',
 ]
+
+if USE_CLOUDINARY:
+    INSTALLED_APPS += ['cloudinary_storage', 'cloudinary']
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -70,11 +89,16 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'codeshare.wsgi.application'
 
+# ── Database — Neon/PostgreSQL on Vercel, SQLite locally ──
 DATABASE_URL = config('DATABASE_URL', default=None)
 
 if DATABASE_URL and HAS_DJ_DATABASE_URL:
     DATABASES = {
-        'default': dj_database_url.parse(DATABASE_URL, conn_max_age=600)
+        'default': dj_database_url.parse(
+            DATABASE_URL,
+            conn_max_age=0,       # 0 = no persistent connections (required for serverless)
+            ssl_require=True,
+        )
     }
 else:
     DATABASES = {
@@ -96,6 +120,7 @@ TIME_ZONE = 'UTC'
 USE_I18N = True
 USE_TZ = True
 
+# ── Static files (served by Whitenoise) ──
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
 STATIC_ROOT = BASE_DIR / 'staticfiles'
@@ -106,14 +131,21 @@ try:
 except ImportError:
     pass
 
-MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+# ── Media / uploaded files ──
+if USE_CLOUDINARY:
+    DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+    MEDIA_URL = f'https://res.cloudinary.com/{CLOUDINARY_CLOUD_NAME}/'
+else:
+    MEDIA_URL = '/media/'
+    MEDIA_ROOT = BASE_DIR / 'media'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-RAZORPAY_KEY_ID = config('RAZORPAY_KEY_ID', default='rzp_test_Se4MVYvanR9IFr')
-RAZORPAY_KEY_SECRET = config('RAZORPAY_KEY_SECRET', default='Rwm5cKKNvDRNk2fJlAi8DBoE')
+# ── Razorpay ──
+RAZORPAY_KEY_ID     = config('RAZORPAY_KEY_ID',     default='rzp_test_Se4MVYvanR9IFr')
+RAZORPAY_KEY_SECRET = config('RAZORPAY_KEY_SECRET',  default='Rwm5cKKNvDRNk2fJlAi8DBoE')
 
+# ── Upload limits (50 MB) ──
 DATA_UPLOAD_MAX_MEMORY_SIZE = 52428800
 FILE_UPLOAD_MAX_MEMORY_SIZE = 52428800
 
