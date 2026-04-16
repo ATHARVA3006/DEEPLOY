@@ -1,0 +1,90 @@
+{% extends 'base.html' %}
+{% load dict_extras %}
+{% block title %}Database Viewer - Admin{% endblock %}
+{% block content %}
+
+<div style="margin-bottom:24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+  <div>
+    <a href="{% url 'admin_dashboard' %}" style="color:var(--muted);text-decoration:none;font-size:14px;">← Dashboard</a>
+    <h1 class="gradient-text" style="font-size:26px;font-weight:800;margin-top:8px;">🗄️ Database Viewer</h1>
+    <p style="color:var(--muted);font-size:13px;">Live read-only view of all database tables</p>
+  </div>
+</div>
+
+<!-- Table summary cards -->
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:12px;margin-bottom:28px;">
+  {% for key, tbl in tables.items %}
+  <a href="?table={{ key }}" style="text-decoration:none;">
+    <div class="stat-card" style="{% if key == table_key %}border-color:var(--accent);background:rgba(88,166,255,0.08);{% endif %}padding:14px;cursor:pointer;">
+      <div style="font-size:20px;margin-bottom:4px;">
+        {% if key == 'users' %}👥{% elif key == 'folders' %}📂{% elif key == 'files' %}📄{% elif key == 'subscriptions' %}💎{% elif key == 'profiles' %}👤{% elif key == 'links' %}🔗{% else %}📋{% endif %}
+      </div>
+      <div class="stat-num" style="font-size:22px;">{{ counts|get_item:key }}</div>
+      <div class="stat-label">{{ key|title }}</div>
+    </div>
+  </a>
+  {% endfor %}
+</div>
+
+<!-- Table selector tabs -->
+<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px;">
+  {% for key, tbl in tables.items %}
+  <a href="?table={{ key }}"
+     style="padding:8px 16px;border-radius:8px;text-decoration:none;font-size:13px;font-weight:600;border:1px solid;
+            {% if key == table_key %}background:rgba(88,166,255,0.15);border-color:var(--accent);color:var(--accent);
+            {% else %}background:var(--surface);border-color:var(--border);color:var(--muted);{% endif %}">
+    {{ key|title }}
+  </a>
+  {% endfor %}
+</div>
+
+<!-- Table data -->
+<div style="margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;">
+  <h2 style="font-size:16px;font-weight:700;">
+    {{ table_key|title }} table
+    <span style="color:var(--muted);font-weight:400;font-size:13px;">({{ rows|length }} rows shown, max 200)</span>
+  </h2>
+  <span style="font-size:12px;color:var(--muted);">Read-only · Sorted by newest first</span>
+</div>
+
+{% if error %}
+  <div class="alert alert-error">{{ error }}</div>
+{% elif rows %}
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          {% for col in columns %}
+            <th>{{ col }}</th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in rows %}
+        <tr>
+          {% for cell in row %}
+          <td style="font-size:13px;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+            {% if cell is None %}
+              <span style="color:var(--muted);font-style:italic;">null</span>
+            {% elif cell == True %}
+              <span class="badge badge-green">✓ true</span>
+            {% elif cell == False %}
+              <span class="badge badge-gray">✗ false</span>
+            {% else %}
+              {{ cell }}
+            {% endif %}
+          </td>
+          {% endfor %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% else %}
+  <div style="text-align:center;padding:48px;background:var(--surface);border:1px dashed var(--border);border-radius:14px;">
+    <div style="font-size:40px;margin-bottom:12px;">📭</div>
+    <p style="color:var(--muted);">No records in this table yet.</p>
+  </div>
+{% endif %}
+
+{% endblock %}

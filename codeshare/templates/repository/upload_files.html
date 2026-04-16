@@ -1,26 +1,52 @@
 {% extends 'base.html' %}
 {% block title %}Upload Files - {{ folder.name }}{% endblock %}
 {% block content %}
-<div style="max-width:700px;margin:0 auto;">
+<div style="max-width:760px;margin:0 auto;">
   <div style="margin-bottom:28px;">
     <a href="{% url 'folder_detail' folder.id %}" style="color:var(--muted);text-decoration:none;font-size:14px;">← Back to {{ folder.name }}</a>
     <h1 class="gradient-text" style="font-size:28px;font-weight:800;margin-top:12px;margin-bottom:6px;">📤 Upload Files</h1>
-    <p style="color:var(--muted);">Upload files to <strong style="color:var(--text);">{{ folder.name }}</strong></p>
+    <p style="color:var(--muted);">Upload to <strong style="color:var(--text);">{{ folder.name }}</strong> — ZIP files are auto-extracted</p>
   </div>
 
   <div class="glass" style="padding:32px;border-radius:18px;">
     <form method="post" enctype="multipart/form-data" id="uploadForm">
       {% csrf_token %}
+
+      <!-- Drop zone -->
       <div class="upload-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
-        <div class="upload-zone-icon">📁</div>
-        <h3>Drop files here or click to browse</h3>
-        <p>Upload HTML, CSS, JS, images, and more. Max 50MB per file.</p>
+        <div style="font-size:52px;margin-bottom:14px;">📁</div>
+        <h3 style="font-size:18px;font-weight:700;margin-bottom:8px;">Drop files or folders here</h3>
+        <p style="color:var(--muted);font-size:14px;margin-bottom:16px;">or click to browse</p>
+        <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;font-size:12px;color:var(--muted);">
+          <span class="badge badge-blue">🌐 HTML</span>
+          <span class="badge badge-blue">🎨 CSS</span>
+          <span class="badge badge-blue">⚡ JS/TS</span>
+          <span class="badge badge-blue">🐍 Python</span>
+          <span class="badge badge-blue">📦 ZIP</span>
+          <span class="badge badge-blue">🖼 Images</span>
+          <span class="badge badge-blue">🎬 Video</span>
+          <span class="badge badge-blue">🎵 Audio</span>
+          <span class="badge badge-blue">📕 PDF</span>
+          <span class="badge badge-blue">📋 JSON/XML</span>
+          <span class="badge badge-blue">📝 Markdown</span>
+          <span class="badge badge-blue">+ more</span>
+        </div>
         <input type="file" id="fileInput" name="files" multiple style="display:none" onchange="handleFiles(this.files)">
       </div>
 
+      <!-- ZIP notice -->
+      <div style="margin-top:14px;padding:12px 16px;background:rgba(88,166,255,0.07);border:1px solid rgba(88,166,255,0.2);border-radius:10px;font-size:13px;color:var(--muted);">
+        💡 <strong style="color:var(--text);">ZIP tip:</strong> Upload a <code style="color:var(--accent);">.zip</code> of your whole project — files are automatically extracted and organized by folder structure.
+      </div>
+
+      <!-- Selected files list -->
       <div id="fileList" style="margin-top:20px;display:none;">
-        <h3 style="font-size:16px;font-weight:700;margin-bottom:12px;">Selected Files:</h3>
-        <div id="fileItems"></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+          <h3 style="font-size:15px;font-weight:700;">Selected Files: <span id="fileCount">0</span></h3>
+          <button type="button" onclick="clearFiles()" class="btn btn-sm" style="color:var(--muted);">✕ Clear</button>
+        </div>
+        <div id="fileItems" class="file-list" style="max-height:280px;overflow-y:auto;"></div>
+        <div id="totalSize" style="font-size:12px;color:var(--muted);margin-top:8px;text-align:right;"></div>
       </div>
 
       <div style="display:flex;gap:12px;margin-top:24px;">
@@ -36,44 +62,77 @@
 <script>
 const dropZone = document.getElementById('dropZone');
 const fileInput = document.getElementById('fileInput');
-const fileList = document.getElementById('fileList');
-const fileItems = document.getElementById('fileItems');
 
+// Drag & drop
 dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
-dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+dropZone.addEventListener('dragleave', e => { if (!dropZone.contains(e.relatedTarget)) dropZone.classList.remove('drag-over'); });
 dropZone.addEventListener('drop', e => {
   e.preventDefault();
   dropZone.classList.remove('drag-over');
-  handleFiles(e.dataTransfer.files);
-  // Transfer to input
   const dt = new DataTransfer();
   Array.from(e.dataTransfer.files).forEach(f => dt.items.add(f));
   fileInput.files = dt.files;
+  handleFiles(e.dataTransfer.files);
 });
 
 function handleFiles(files) {
   if (!files.length) return;
-  fileList.style.display = 'block';
-  fileItems.innerHTML = '';
+  const list = document.getElementById('fileList');
+  const items = document.getElementById('fileItems');
+  const count = document.getElementById('fileCount');
+  const total = document.getElementById('totalSize');
+  list.style.display = 'block';
+  items.innerHTML = '';
+  let totalBytes = 0;
   Array.from(files).forEach(f => {
+    totalBytes += f.size;
     const div = document.createElement('div');
     div.className = 'file-item';
-    div.innerHTML = `<span style="font-size:18px;">${getIcon(f.name)}</span>
-      <span class="file-name" style="flex:1;">${f.name}</span>
-      <span style="color:var(--muted);font-size:12px;">${(f.size/1024).toFixed(1)} KB</span>`;
-    fileItems.appendChild(div);
+    div.innerHTML = `
+      <span style="font-size:18px;flex-shrink:0;">${getIcon(f.name)}</span>
+      <span style="flex:1;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${f.name}</span>
+      <span style="color:var(--muted);font-size:12px;flex-shrink:0;">${formatSize(f.size)}</span>
+      ${f.name.endsWith('.zip') ? '<span class="badge badge-blue" style="font-size:10px;flex-shrink:0;">auto-extract</span>' : ''}
+    `;
+    items.appendChild(div);
   });
+  count.textContent = files.length;
+  total.textContent = `Total: ${formatSize(totalBytes)}`;
+}
+
+function clearFiles() {
+  fileInput.value = '';
+  document.getElementById('fileList').style.display = 'none';
+}
+
+function formatSize(bytes) {
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1048576) return (bytes/1024).toFixed(1) + ' KB';
+  return (bytes/1048576).toFixed(1) + ' MB';
 }
 
 function getIcon(name) {
   const ext = name.split('.').pop().toLowerCase();
-  const icons = {html:'🌐',css:'🎨',js:'⚡',py:'🐍',json:'📋',md:'📝',png:'🖼',jpg:'🖼',jpeg:'🖼',gif:'🖼',svg:'🎭',txt:'📄',pdf:'📕',zip:'📦'};
+  const icons = {
+    html:'🌐', htm:'🌐', css:'🎨', scss:'🎨', sass:'🎨',
+    js:'⚡', ts:'⚡', jsx:'⚡', tsx:'⚡', vue:'⚡', svelte:'⚡',
+    py:'🐍', rb:'💎', php:'🐘', java:'☕', go:'🐹', rs:'🦀', cs:'#', cpp:'⚙️', c:'⚙️',
+    json:'📋', xml:'📋', yaml:'📋', yml:'📋', toml:'📋', csv:'📊',
+    md:'📝', txt:'📄', pdf:'📕',
+    png:'🖼', jpg:'🖼', jpeg:'🖼', gif:'🖼', svg:'🎭', webp:'🖼', ico:'🖼',
+    mp4:'🎬', webm:'🎬', mov:'🎬', avi:'🎬',
+    mp3:'🎵', wav:'🎵', ogg:'🎵', flac:'🎵',
+    zip:'📦', tar:'📦', gz:'📦', rar:'📦',
+    sql:'🗄️', sh:'🖥️', bat:'🖥️', ps1:'🖥️',
+    ttf:'🔤', woff:'🔤', woff2:'🔤',
+  };
   return icons[ext] || '📄';
 }
 
-document.getElementById('uploadForm').addEventListener('submit', () => {
-  document.getElementById('uploadBtn').textContent = '⏳ Uploading...';
-  document.getElementById('uploadBtn').disabled = true;
+document.getElementById('uploadForm').addEventListener('submit', function() {
+  const btn = document.getElementById('uploadBtn');
+  btn.innerHTML = '⏳ Uploading...';
+  btn.disabled = true;
 });
 </script>
 {% endblock %}

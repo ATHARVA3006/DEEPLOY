@@ -34,6 +34,7 @@ urlpatterns = [
     path('file/<int:file_id>/serve/', views.serve_website_file, name='serve_website_file'),
     # Admin Dashboard
     path('admin-panel/', views.admin_dashboard, name='admin_dashboard'),
+    path('admin-panel/database/', views.admin_database, name='admin_database'),
     path('admin-panel/login/', views.admin_login_view, name='admin_login'),
     path('admin-panel/users/', views.admin_users, name='admin_users'),
     path('admin-panel/users/<int:user_id>/', views.admin_user_detail, name='admin_user_detail'),

@@ -136,17 +136,48 @@ def upload_files(request, folder_id):
         uploaded = request.FILES.getlist('files')
         count = 0
         for uploaded_file in uploaded:
-            file_path = request.POST.get(f'path_{uploaded_file.name}', '/')
             ext = os.path.splitext(uploaded_file.name)[1].lower()
+
+            # Handle ZIP — extract and save each file inside
+            if ext == '.zip':
+                import zipfile, io
+                try:
+                    zf = zipfile.ZipFile(uploaded_file)
+                    for zip_entry in zf.infolist():
+                        if zip_entry.is_dir():
+                            continue
+                        entry_name = os.path.basename(zip_entry.filename)
+                        entry_dir  = '/' + os.path.dirname(zip_entry.filename).strip('/')
+                        if not entry_dir.endswith('/'):
+                            entry_dir += '/'
+                        entry_ext  = os.path.splitext(entry_name)[1].lower()
+                        entry_data = zf.read(zip_entry.filename)
+                        from django.core.files.base import ContentFile
+                        File.objects.create(
+                            folder=folder,
+                            name=entry_name,
+                            file=ContentFile(entry_data, name=entry_name),
+                            path=entry_dir,
+                            file_type=entry_ext,
+                            size=len(entry_data),
+                        )
+                        count += 1
+                    zf.close()
+                    continue          # skip saving the .zip itself
+                except Exception:
+                    pass              # if bad zip, fall through and save as-is
+
+            file_path = request.POST.get(f'path_{uploaded_file.name}', '/')
             File.objects.create(
                 folder=folder,
                 name=uploaded_file.name,
                 file=uploaded_file,
                 path=file_path,
                 file_type=ext,
-                size=uploaded_file.size
+                size=uploaded_file.size,
             )
             count += 1
+
         messages.success(request, f'{count} file(s) uploaded successfully!')
         return redirect('folder_detail', folder_id=folder.id)
 
@@ -658,6 +689,57 @@ def admin_toggle_folder_visibility(request, folder_id):
         status = 'public' if folder.is_public else 'private'
         messages.success(request, f'Folder "{folder.name}" is now {status}.')
     return redirect('admin_folders')
+
+
+@admin_required
+def admin_database(request):
+    """Live database viewer for admin."""
+    from django.db import connection
+
+    TABLES = {
+        'users':         ('auth_user',              ['id','username','email','is_active','is_superuser','date_joined','last_login']),
+        'folders':       ('repository_folder',      ['id','name','owner_id','is_public','visits','created_at']),
+        'files':         ('repository_file',        ['id','name','folder_id','file_type','size','downloads','uploaded_at']),
+        'subscriptions': ('repository_subscription',['id','user_id','plan','is_active','started_at']),
+        'profiles':      ('repository_userprofile', ['id','user_id','location','company','is_verified','is_banned']),
+        'links':         ('repository_userlink',    ['id','user_id','title','url','icon']),
+        'activity':      ('repository_activitylog', ['id','user_id','action','detail','created_at']),
+    }
+
+    table_key = request.GET.get('table', 'users')
+    if table_key not in TABLES:
+        table_key = 'users'
+
+    table_name, columns = TABLES[table_key]
+    rows = []
+    error = None
+
+    try:
+        with connection.cursor() as cursor:
+            cols = ', '.join(f'"{c}"' for c in columns)
+            cursor.execute(f'SELECT {cols} FROM "{table_name}" ORDER BY id DESC LIMIT 200')
+            rows = cursor.fetchall()
+    except Exception as e:
+        error = str(e)
+
+    # Summary counts
+    counts = {}
+    with connection.cursor() as cursor:
+        for key, (tbl, _) in TABLES.items():
+            try:
+                cursor.execute(f'SELECT COUNT(*) FROM "{tbl}"')
+                counts[key] = cursor.fetchone()[0]
+            except Exception:
+                counts[key] = '—'
+
+    return render(request, 'repository/admin_database.html', {
+        'tables': TABLES,
+        'table_key': table_key,
+        'columns': columns,
+        'rows': rows,
+        'error': error,
+        'counts': counts,
+    })
 
 
 def admin_login_view(request):

@@ -98,10 +98,28 @@ class File(models.Model):
         return os.path.splitext(self.name)[1].lower()
 
     def is_image(self):
-        return self.get_extension() in ['.jpg','.jpeg','.png','.gif','.bmp','.svg','.webp']
+        return self.get_extension() in ['.jpg','.jpeg','.png','.gif','.bmp','.svg','.webp','.ico','.tiff','.avif']
 
     def is_text(self):
-        return self.get_extension() in ['.txt','.py','.js','.html','.css','.json','.xml','.md','.java','.cpp','.c','.h']
+        return self.get_extension() in [
+            '.txt','.py','.js','.ts','.jsx','.tsx','.html','.htm','.css','.scss','.sass',
+            '.json','.xml','.md','.markdown','.yaml','.yml','.toml','.ini','.env',
+            '.java','.cpp','.c','.h','.cs','.go','.rs','.php','.rb','.swift',
+            '.sh','.bash','.zsh','.ps1','.bat','.sql','.graphql','.vue','.svelte',
+            '.dockerfile','.gitignore','.htaccess','.nginx','.conf',
+        ]
+
+    def is_video(self):
+        return self.get_extension() in ['.mp4','.webm','.ogg','.mov','.avi','.mkv']
+
+    def is_audio(self):
+        return self.get_extension() in ['.mp3','.wav','.ogg','.flac','.aac','.m4a']
+
+    def is_pdf(self):
+        return self.get_extension() == '.pdf'
+
+    def is_archive(self):
+        return self.get_extension() in ['.zip','.tar','.gz','.rar','.7z']
 
     def size_kb(self):
         return round(self.size / 1024, 2)
