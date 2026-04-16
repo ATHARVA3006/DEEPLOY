@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+{% block title %}Projects - Admin{% endblock %}
+{% block content %}
+
+<div style="margin-bottom:24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+  <div>
+    <a href="{% url 'admin_dashboard' %}" style="color:var(--muted);text-decoration:none;font-size:14px;">← Dashboard</a>
+    <h1 class="gradient-text" style="font-size:26px;font-weight:800;margin-top:8px;">📂 All Projects ({{ folders.count }})</h1>
+  </div>
+</div>
+
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>Project</th>
+        <th>Owner</th>
+        <th>Files</th>
+        <th>Views</th>
+        <th>Created</th>
+        <th>Visibility</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for folder in folders %}
+      <tr>
+        <td>
+          <a href="{% url 'folder_detail' folder.id %}" style="color:var(--accent);text-decoration:none;font-weight:600;font-size:14px;">{{ folder.name }}</a>
+          {% if folder.description %}<div style="font-size:12px;color:var(--muted);">{{ folder.description|truncatechars:50 }}</div>{% endif %}
+        </td>
+        <td style="font-size:14px;">{{ folder.owner.username }}</td>
+        <td>{{ folder.file_count }}</td>
+        <td>{{ folder.visits }}</td>
+        <td style="color:var(--muted);font-size:13px;">{{ folder.created_at|date:"M d, Y" }}</td>
+        <td>
+          {% if folder.is_public %}<span class="badge badge-green">Public</span>{% else %}<span class="badge badge-gray">Private</span>{% endif %}
+        </td>
+        <td>
+          <div style="display:flex;gap:6px;">
+            <form method="post" action="{% url 'admin_toggle_folder_visibility' folder.id %}" style="display:inline;">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-sm">{% if folder.is_public %}🔒 Make Private{% else %}🌍 Make Public{% endif %}</button>
+            </form>
+            <form method="post" action="{% url 'admin_delete_folder' folder.id %}" style="display:inline;" onsubmit="return confirm('Delete {{ folder.name }}?')">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-danger btn-sm">🗑</button>
+            </form>
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

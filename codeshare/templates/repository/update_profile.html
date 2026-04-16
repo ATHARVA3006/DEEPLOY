@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{% block title %}Update Profile - Deployer{% endblock %}
+{% block content %}
+<div style="max-width:640px;margin:0 auto;">
+  <div style="margin-bottom:24px;">
+    <a href="{% url 'user_settings' %}" style="color:var(--muted);text-decoration:none;font-size:14px;">← Settings</a>
+    <h1 class="gradient-text" style="font-size:26px;font-weight:800;margin-top:12px;margin-bottom:6px;">✏️ Edit Profile</h1>
+  </div>
+  <div class="glass" style="padding:32px;border-radius:18px;">
+    <form method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+      <h3 style="font-size:16px;font-weight:700;margin-bottom:16px;color:var(--accent);">Account Info</h3>
+      {% for field in user_form %}
+        <div class="form-group">
+          <label class="form-label">{{ field.label }}</label>
+          {{ field }}
+          {% if field.errors %}{% for e in field.errors %}<p style="color:#f85149;font-size:13px;margin-top:4px;">{{ e }}</p>{% endfor %}{% endif %}
+        </div>
+      {% endfor %}
+      <h3 style="font-size:16px;font-weight:700;margin:24px 0 16px;color:var(--accent);">Profile Details</h3>
+      {% for field in profile_form %}
+        <div class="form-group">
+          <label class="form-label">{{ field.label }}</label>
+          {{ field }}
+          {% if field.errors %}{% for e in field.errors %}<p style="color:#f85149;font-size:13px;margin-top:4px;">{{ e }}</p>{% endfor %}{% endif %}
+        </div>
+      {% endfor %}
+      <div style="display:flex;gap:12px;margin-top:8px;">
+        <button type="submit" class="btn btn-primary" style="flex:1;padding:13px;">💾 Save Profile</button>
+        <a href="{% url 'user_settings' %}" class="btn" style="padding:13px 20px;">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

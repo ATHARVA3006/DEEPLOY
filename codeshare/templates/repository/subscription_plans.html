@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+{% block title %}Subscription Plans - Deployer{% endblock %}
+{% block content %}
+
+<div style="text-align:center;margin-bottom:48px;">
+  <h1 class="gradient-text" style="font-size:36px;font-weight:800;margin-bottom:10px;">💎 Choose Your Plan</h1>
+  <p style="color:var(--muted);font-size:16px;">Unlock more features and storage for your projects</p>
+  <p style="color:var(--muted);font-size:13px;margin-top:8px;">Current plan: <strong style="color:var(--accent);">{{ subscription.plan|title }}</strong></p>
+</div>
+
+<div class="plan-grid" style="max-width:900px;margin:0 auto;">
+  <!-- Free -->
+  <div class="plan-card {% if subscription.plan == 'free' %}featured{% endif %}">
+    {% if subscription.plan == 'free' %}<div class="plan-badge">Current</div>{% endif %}
+    <div class="plan-name">🆓 Free</div>
+    <div class="plan-price">$0</div>
+    <div class="plan-period">forever</div>
+    <ul class="plan-features">
+      <li>500 MB storage</li>
+      <li>Unlimited public projects</li>
+      <li>Live website preview</li>
+      <li>Shareable links</li>
+      <li>Community access</li>
+    </ul>
+    {% if subscription.plan != 'free' %}
+      <a href="{% url 'upgrade_subscription' 'free' %}" class="btn w-full" style="padding:12px;text-align:center;">Downgrade to Free</a>
+    {% else %}
+      <button class="btn w-full" disabled style="padding:12px;opacity:.5;">Current Plan</button>
+    {% endif %}
+  </div>
+
+  <!-- Pro -->
+  <div class="plan-card {% if subscription.plan == 'pro' %}featured{% endif %}">
+    {% if subscription.plan == 'pro' %}<div class="plan-badge">Current</div>{% endif %}
+    <div class="plan-name">⭐ Pro</div>
+    <div class="plan-price">$9</div>
+    <div class="plan-period">per month</div>
+    <ul class="plan-features">
+      <li>5 GB storage</li>
+      <li>Private projects</li>
+      <li>Custom domain</li>
+      <li>Priority support</li>
+      <li>Analytics dashboard</li>
+    </ul>
+    {% if subscription.plan != 'pro' %}
+      <a href="{% url 'upgrade_subscription' 'pro' %}" class="btn btn-primary w-full" style="padding:12px;text-align:center;">Upgrade to Pro</a>
+    {% else %}
+      <button class="btn w-full" disabled style="padding:12px;opacity:.5;">Current Plan</button>
+    {% endif %}
+  </div>
+
+  <!-- Premium -->
+  <div class="plan-card {% if subscription.plan == 'premium' %}featured{% endif %}">
+    {% if subscription.plan == 'premium' %}<div class="plan-badge">Current</div>{% endif %}
+    <div class="plan-name">👑 Premium</div>
+    <div class="plan-price">$29</div>
+    <div class="plan-period">per month</div>
+    <ul class="plan-features">
+      <li>Unlimited storage</li>
+      <li>Everything in Pro</li>
+      <li>Multiple custom domains</li>
+      <li>Team collaboration</li>
+      <li>API access</li>
+    </ul>
+    {% if subscription.plan != 'premium' %}
+      <a href="{% url 'upgrade_subscription' 'premium' %}" class="btn btn-primary w-full" style="padding:12px;text-align:center;background:linear-gradient(135deg,var(--accent2),#8957e5);">Upgrade to Premium</a>
+    {% else %}
+      <button class="btn w-full" disabled style="padding:12px;opacity:.5;">Current Plan</button>
+    {% endif %}
+  </div>
+</div>
+
+<div style="text-align:center;margin-top:32px;">
+  <a href="{% url 'user_settings' %}" style="color:var(--muted);text-decoration:none;font-size:14px;">← Back to Settings</a>
+</div>
+{% endblock %}

@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+{% block title %}Admin Dashboard - Deployer{% endblock %}
+{% block content %}
+
+<div style="margin-bottom:28px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+  <div>
+    <h1 class="gradient-text" style="font-size:28px;font-weight:800;margin-bottom:4px;">🛡️ Admin Dashboard</h1>
+    <p style="color:var(--muted);">Platform overview and management</p>
+  </div>
+  <div style="display:flex;gap:8px;">
+    <a href="{% url 'admin_users' %}" class="btn btn-sm">👥 Users</a>
+    <a href="{% url 'admin_folders' %}" class="btn btn-sm">📂 Projects</a>
+  </div>
+</div>
+
+<!-- Stats Grid -->
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:16px;margin-bottom:36px;">
+  <div class="stat-card">
+    <div class="stat-num">{{ total_users }}</div>
+    <div class="stat-label">👥 Total Users</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-num">{{ active_users }}</div>
+    <div class="stat-label">✅ Active (30d)</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-num">{{ total_folders }}</div>
+    <div class="stat-label">📂 Projects</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-num">{{ total_files }}</div>
+    <div class="stat-label">📄 Files</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-num">{{ public_folders }}</div>
+    <div class="stat-label">🌍 Public</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-num">{{ private_folders }}</div>
+    <div class="stat-label">🔒 Private</div>
+  </div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">
+  <!-- Recent Users -->
+  <div>
+    <h2 style="font-size:18px;font-weight:700;margin-bottom:14px;">👥 Recent Users</h2>
+    <div class="file-list">
+      {% for u in recent_users %}
+      <div class="file-item" style="justify-content:space-between;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;flex-shrink:0;">{{ u.username|first|upper }}</div>
+          <div>
+            <div style="font-size:14px;font-weight:600;">{{ u.username }}</div>
+            <div style="font-size:12px;color:var(--muted);">{{ u.date_joined|date:"M d, Y" }}</div>
+          </div>
+        </div>
+        <a href="{% url 'admin_user_detail' u.id %}" class="btn btn-sm">View</a>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Recent Projects -->
+  <div>
+    <h2 style="font-size:18px;font-weight:700;margin-bottom:14px;">📂 Recent Projects</h2>
+    <div class="file-list">
+      {% for folder in recent_folders %}
+      <div class="file-item" style="justify-content:space-between;">
+        <div style="flex:1;min-width:0;">
+          <a href="{% url 'folder_detail' folder.id %}" class="file-name" style="font-size:14px;">{{ folder.name }}</a>
+          <div style="font-size:12px;color:var(--muted);">{{ folder.owner.username }} · {{ folder.created_at|date:"M d" }}</div>
+        </div>
+        {% if folder.is_public %}<span class="badge badge-green">Public</span>{% else %}<span class="badge badge-gray">Private</span>{% endif %}
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

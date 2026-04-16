@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Deployer{% endblock %}</title>
+  {% load static %}
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+  <meta name="description" content="Deployer — Upload files, preview websites, and share your work with the world.">
+</head>
+<body>
+  <nav class="navbar">
+    <a href="{% url 'home' %}" class="navbar-brand">🚀 Deployer</a>
+    <ul class="navbar-nav">
+      <li><a href="{% url 'home' %}" class="nav-link">🏠 Home</a></li>
+      <li><a href="{% url 'community' %}" class="nav-link">🌍 Community</a></li>
+      {% if user.is_authenticated %}
+        <li><a href="{% url 'create_folder' %}" class="nav-link">✨ New Project</a></li>
+        <li><a href="{% url 'user_settings' %}" class="nav-link">⚙️ Settings</a></li>
+        {% if user.is_superuser %}
+          <li><a href="{% url 'admin_dashboard' %}" class="nav-link">🛡️ Admin</a></li>
+        {% endif %}
+        <li><a href="{% url 'logout' %}" class="nav-link">👋 Logout</a></li>
+      {% else %}
+        <li><a href="{% url 'login' %}" class="nav-link">🔐 Login</a></li>
+        <li><a href="{% url 'register' %}" class="btn btn-primary btn-sm">🚀 Get Started</a></li>
+      {% endif %}
+    </ul>
+  </nav>
+
+  <div class="container">
+    {% if messages %}
+      {% for message in messages %}
+        <div class="alert alert-{% if message.tags == 'error' %}error{% elif message.tags == 'success' %}success{% elif message.tags == 'warning' %}warning{% else %}info{% endif %}">
+          {{ message }}
+        </div>
+      {% endfor %}
+    {% endif %}
+    {% block content %}{% endblock %}
+  </div>
+
+  <script>
+    // Scroll reveal
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('active'); });
+    }, { threshold: 0.1 });
+    document.querySelectorAll('.scroll-reveal').forEach(el => observer.observe(el));
+
+    // Counter animation
+    document.querySelectorAll('[data-target]').forEach(el => {
+      const target = parseInt(el.dataset.target);
+      let current = 0;
+      const step = Math.ceil(target / 60);
+      const timer = setInterval(() => {
+        current = Math.min(current + step, target);
+        el.textContent = current.toLocaleString();
+        if (current >= target) clearInterval(timer);
+      }, 20);
+    });
+  </script>
+</body>
+</html>

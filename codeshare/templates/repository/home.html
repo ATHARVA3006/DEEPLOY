@@ -1,0 +1,230 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Deployer — Share Code. Deploy Vision.{% endblock %}
+{% block content %}
+
+{% if not user.is_authenticated %}
+<!-- ── HERO ── -->
+<section class="hero">
+  <div class="hero-bg">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+    <div class="grid-lines"></div>
+  </div>
+  <div class="hero-inner">
+    <span class="hero-pill">🚀 The Developer's Deploy Platform</span>
+    <h1 class="hero-h1">Share Code.<br><span class="shine-text">Deploy Vision.</span></h1>
+    <p class="hero-sub">Upload files, preview websites, and share your work with the world — in seconds. No config. No complexity.</p>
+    <div class="hero-btns">
+      <a href="{% url 'register' %}" class="hbtn hbtn-primary">Get Started Free <span>→</span></a>
+      <a href="{% url 'community' %}" class="hbtn hbtn-ghost">Explore Projects</a>
+    </div>
+    <div class="hero-stats">
+      <div class="hstat"><span class="hstat-n" data-target="{{ total_folders }}">0</span><span class="hstat-l">Projects</span></div>
+      <div class="hstat-div"></div>
+      <div class="hstat"><span class="hstat-n" data-target="{{ total_users }}">0</span><span class="hstat-l">Developers</span></div>
+      <div class="hstat-div"></div>
+      <div class="hstat"><span class="hstat-n" data-target="99">0</span><span class="hstat-l">% Uptime</span></div>
+    </div>
+  </div>
+  <div class="scroll-hint">
+    <div class="scroll-mouse"><div class="scroll-wheel"></div></div>
+    <span>Scroll</span>
+  </div>
+</section>
+
+<!-- ── FEATURES ── -->
+<section class="sec features-sec">
+  <div class="sec-head">
+    <h2 class="sec-title">Why Deployer?</h2>
+    <p class="sec-sub">Everything you need to share and showcase your work</p>
+  </div>
+  <div class="feat-grid">
+    <div class="feat-card"><div class="feat-icon">⚡</div><h3>Lightning Fast</h3><p>Upload and deploy in seconds. No complex setup needed.</p></div>
+    <div class="feat-card"><div class="feat-icon">🔒</div><h3>Secure & Private</h3><p>Choose public or private. Your code stays yours.</p></div>
+    <div class="feat-card"><div class="feat-icon">🌐</div><h3>Live Preview</h3><p>Preview HTML sites instantly. Share live links anywhere.</p></div>
+    <div class="feat-card"><div class="feat-icon">📊</div><h3>Analytics</h3><p>Track views and downloads on every project you share.</p></div>
+    <div class="feat-card"><div class="feat-icon">🎨</div><h3>Beautiful UI</h3><p>Dark mode. Built for devs who care about design.</p></div>
+    <div class="feat-card"><div class="feat-icon">🤝</div><h3>Community</h3><p>Discover projects, get inspired, and grow together.</p></div>
+  </div>
+</section>
+
+<!-- ── HOW IT WORKS ── -->
+<section class="sec hiw-sec">
+  <div class="sec-head">
+    <h2 class="sec-title">How It Works</h2>
+    <p class="sec-sub">Three steps to go live</p>
+  </div>
+  <div class="steps">
+    <div class="step"><div class="step-num">01</div><div class="step-icon">📝</div><h3>Create Account</h3><p>Sign up free in seconds. No credit card required.</p></div>
+    <div class="step-line"></div>
+    <div class="step"><div class="step-num">02</div><div class="step-icon">📤</div><h3>Upload Files</h3><p>Drag and drop your project. Organize into folders.</p></div>
+    <div class="step-line"></div>
+    <div class="step"><div class="step-num">03</div><div class="step-icon">🔗</div><h3>Share & Deploy</h3><p>Get instant shareable links. Preview websites live.</p></div>
+  </div>
+</section>
+
+<!-- ── CTA ── -->
+<section class="cta-sec">
+  <div class="cta-glow"></div>
+  <div class="cta-inner">
+    <h2>Ready to Deploy?</h2>
+    <p>Join developers already on Deployer</p>
+    <a href="{% url 'register' %}" class="hbtn hbtn-primary hbtn-lg">Start Deploying Now <span>→</span></a>
+  </div>
+</section>
+
+{% else %}
+<!-- ── LOGGED IN DASHBOARD ── -->
+<div class="dash-hero">
+  <div class="dash-welcome">
+    <div class="dash-avatar">{{ user.username|first|upper }}</div>
+    <div>
+      <h1>Welcome back, <span class="shine-text">{{ user.username }}</span> 👋</h1>
+      <p>Ready to deploy something amazing today?</p>
+    </div>
+  </div>
+  <div class="dash-actions">
+    <a href="{% url 'create_folder' %}" class="hbtn hbtn-primary">✨ New Project</a>
+    <a href="{% url 'community' %}" class="hbtn hbtn-ghost">🌍 Community</a>
+  </div>
+</div>
+
+<div style="margin-bottom:28px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+  <h2 style="font-size:22px;font-weight:800;">🔥 Recent Public Projects</h2>
+  <a href="{% url 'user_settings' %}" class="btn btn-sm">My Projects →</a>
+</div>
+
+<div class="projects-grid">
+{% for folder in folders %}
+<a href="{% url 'folder_detail' folder.id %}" class="proj-card">
+  <div class="proj-top">
+    <span class="proj-icon">📂</span>
+    <span class="badge badge-green">Public</span>
+  </div>
+  <h3 class="proj-name">{{ folder.name }}</h3>
+  <p class="proj-desc">{{ folder.description|default:"No description provided"|truncatechars:80 }}</p>
+  <div class="proj-meta">
+    <span>👤 {{ folder.owner.username }}</span>
+    <span>📁 {{ folder.files.count }} files</span>
+    <span>👁 {{ folder.visits }}</span>
+    <span>📅 {{ folder.created_at|date:"M d" }}</span>
+  </div>
+</a>
+{% empty %}
+<div class="empty-state">
+  <div class="empty-icon">🚀</div>
+  <h2>No projects yet</h2>
+  <p>Be the first to upload a project!</p>
+  <a href="{% url 'create_folder' %}" class="hbtn hbtn-primary" style="margin-top:20px;display:inline-flex;">✨ Create First Project</a>
+</div>
+{% endfor %}
+</div>
+
+{% if folders %}
+<div style="text-align:center;margin-top:40px;">
+  <a href="{% url 'community' %}" class="hbtn hbtn-ghost">🌍 View All in Community →</a>
+</div>
+{% endif %}
+{% endif %}
+
+<style>
+.hero{position:relative;min-height:100vh;display:flex;align-items:center;justify-content:center;overflow:hidden;margin:-40px -24px 0;padding:140px 24px 100px}
+.hero-bg{position:absolute;inset:0;overflow:hidden}
+.orb{position:absolute;border-radius:50%;filter:blur(80px);opacity:.2;animation:orbFloat 18s ease-in-out infinite}
+.orb-1{width:500px;height:500px;background:radial-gradient(circle,#f85149,#da3633);top:-150px;left:-150px;animation-delay:0s}
+.orb-2{width:400px;height:400px;background:radial-gradient(circle,#58a6ff,#0969da);top:40%;right:-100px;animation-delay:6s}
+.orb-3{width:350px;height:350px;background:radial-gradient(circle,#bc8cff,#8957e5);bottom:-100px;left:35%;animation-delay:12s}
+@keyframes orbFloat{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(40px,-60px) scale(1.1)}66%{transform:translate(-30px,40px) scale(.9)}}
+.grid-lines{position:absolute;inset:0;background-image:linear-gradient(rgba(88,166,255,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(88,166,255,.04) 1px,transparent 1px);background-size:60px 60px}
+.hero-inner{position:relative;z-index:1;text-align:center;max-width:860px}
+.hero-pill{display:inline-block;background:rgba(88,166,255,.1);border:1px solid rgba(88,166,255,.3);padding:8px 22px;border-radius:30px;font-size:13px;font-weight:600;color:#58a6ff;margin-bottom:28px;letter-spacing:.5px}
+.hero-h1{font-size:clamp(40px,8vw,80px);font-weight:900;line-height:1.05;color:#e6edf3;margin-bottom:24px;letter-spacing:-2px}
+.shine-text{background:linear-gradient(135deg,#f85149 0%,#ff9f43 30%,#58a6ff 60%,#bc8cff 100%);background-size:300% 300%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:shineAnim 4s ease infinite}
+@keyframes shineAnim{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+.hero-sub{font-size:clamp(16px,2vw,20px);color:#8b949e;margin-bottom:44px;line-height:1.7;max-width:600px;margin-left:auto;margin-right:auto}
+.hero-btns{display:flex;gap:16px;justify-content:center;flex-wrap:wrap;margin-bottom:64px}
+.hbtn{display:inline-flex;align-items:center;gap:8px;padding:14px 28px;border-radius:12px;font-size:15px;font-weight:600;text-decoration:none;transition:all .3s ease;border:none}
+.hbtn span{transition:transform .3s}
+.hbtn:hover span{transform:translateX(4px)}
+.hbtn-primary{background:linear-gradient(135deg,#58a6ff,#388bfd);color:#fff;box-shadow:0 8px 24px rgba(88,166,255,.3)}
+.hbtn-primary:hover{transform:translateY(-3px);box-shadow:0 14px 32px rgba(88,166,255,.45)}
+.hbtn-ghost{background:rgba(33,38,45,.8);backdrop-filter:blur(10px);color:#e6edf3;border:1px solid rgba(48,54,61,.6)}
+.hbtn-ghost:hover{border-color:rgba(88,166,255,.5);transform:translateY(-3px)}
+.hbtn-lg{padding:18px 40px;font-size:17px}
+.hero-stats{display:flex;align-items:center;justify-content:center;gap:32px;flex-wrap:wrap}
+.hstat{text-align:center}
+.hstat-n{display:block;font-size:clamp(28px,4vw,40px);font-weight:800;color:#58a6ff}
+.hstat-l{font-size:13px;color:#8b949e;font-weight:500;letter-spacing:.5px}
+.hstat-div{width:1px;height:40px;background:rgba(48,54,61,.8)}
+.scroll-hint{position:absolute;bottom:36px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:8px;color:#8b949e;font-size:11px;letter-spacing:1px;text-transform:uppercase}
+.scroll-mouse{width:24px;height:38px;border:2px solid rgba(88,166,255,.5);border-radius:12px;display:flex;justify-content:center;padding-top:6px}
+.scroll-wheel{width:3px;height:8px;background:#58a6ff;border-radius:2px;animation:scrollAnim 2s infinite}
+@keyframes scrollAnim{0%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(14px)}}
+.sec{padding:100px 0}
+.sec-head{text-align:center;margin-bottom:64px}
+.sec-title{font-size:clamp(28px,5vw,48px);font-weight:800;color:#e6edf3;margin-bottom:14px;letter-spacing:-1px}
+.sec-sub{font-size:clamp(14px,2vw,18px);color:#8b949e}
+.feat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:24px}
+.feat-card{background:rgba(22,27,34,.7);backdrop-filter:blur(12px);border:1px solid rgba(48,54,61,.5);border-radius:20px;padding:36px 28px;transition:all .35s ease;position:relative;overflow:hidden}
+.feat-card:hover{transform:translateY(-10px);border-color:rgba(88,166,255,.4);box-shadow:0 20px 40px rgba(0,0,0,.4)}
+.feat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#58a6ff,#bc8cff);transform:scaleX(0);transform-origin:left;transition:transform .35s ease}
+.feat-card:hover::before{transform:scaleX(1)}
+.feat-icon{font-size:44px;margin-bottom:20px;display:block}
+.feat-card h3{font-size:20px;font-weight:700;color:#e6edf3;margin-bottom:10px}
+.feat-card p{color:#8b949e;font-size:15px;line-height:1.65}
+.hiw-sec{background:rgba(13,17,23,.4);margin:0 -24px;padding:100px 24px}
+.steps{display:flex;align-items:center;justify-content:center;gap:0;flex-wrap:wrap}
+.step{text-align:center;max-width:240px;padding:0 20px}
+.step-num{font-size:11px;font-weight:700;color:#58a6ff;letter-spacing:2px;text-transform:uppercase;margin-bottom:16px}
+.step-icon{font-size:52px;margin-bottom:16px;display:block}
+.step h3{font-size:20px;font-weight:700;color:#e6edf3;margin-bottom:10px}
+.step p{color:#8b949e;font-size:14px;line-height:1.6}
+.step-line{flex:1;min-width:60px;max-width:120px;height:2px;background:linear-gradient(90deg,rgba(88,166,255,.4),rgba(163,113,247,.4));margin-bottom:60px}
+.cta-sec{position:relative;margin:80px -24px 0;padding:100px 24px;text-align:center;overflow:hidden}
+.cta-glow{position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(88,166,255,.08) 0%,transparent 70%)}
+.cta-sec::before{content:'';position:absolute;inset:0;border-top:1px solid rgba(88,166,255,.15);border-bottom:1px solid rgba(88,166,255,.15)}
+.cta-inner{position:relative;z-index:1}
+.cta-inner h2{font-size:clamp(32px,5vw,56px);font-weight:900;color:#e6edf3;margin-bottom:16px;letter-spacing:-1px}
+.cta-inner p{font-size:18px;color:#8b949e;margin-bottom:40px}
+.dash-hero{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:24px;margin-bottom:40px;padding:32px;background:rgba(22,27,34,.7);backdrop-filter:blur(12px);border:1px solid rgba(48,54,61,.5);border-radius:20px}
+.dash-welcome{display:flex;align-items:center;gap:20px}
+.dash-avatar{width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg,#58a6ff,#bc8cff);display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:800;color:#fff;flex-shrink:0}
+.dash-welcome h1{font-size:clamp(20px,3vw,28px);font-weight:800;color:#e6edf3;margin-bottom:4px}
+.dash-welcome p{color:#8b949e;font-size:14px}
+.dash-actions{display:flex;gap:12px;flex-wrap:wrap}
+.projects-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr));gap:20px}
+.proj-card{background:rgba(22,27,34,.7);backdrop-filter:blur(12px);border:1px solid rgba(48,54,61,.5);border-radius:18px;padding:24px;text-decoration:none;color:inherit;transition:all .3s ease;display:block;position:relative;overflow:hidden}
+.proj-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#58a6ff,#bc8cff);transform:scaleX(0);transform-origin:left;transition:transform .3s}
+.proj-card:hover{transform:translateY(-6px);border-color:rgba(88,166,255,.4);box-shadow:0 16px 36px rgba(0,0,0,.4)}
+.proj-card:hover::before{transform:scaleX(1)}
+.proj-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.proj-icon{font-size:28px}
+.proj-name{font-size:17px;font-weight:700;color:#e6edf3;margin-bottom:8px}
+.proj-desc{color:#8b949e;font-size:13px;line-height:1.6;margin-bottom:16px}
+.proj-meta{display:flex;gap:12px;font-size:12px;color:#8b949e;flex-wrap:wrap}
+.empty-state{grid-column:1/-1;text-align:center;padding:80px 20px;background:rgba(22,27,34,.6);border:1px dashed rgba(48,54,61,.6);border-radius:20px}
+.empty-icon{font-size:64px;margin-bottom:16px}
+.empty-state h2{font-size:24px;color:#e6edf3;margin-bottom:8px}
+.empty-state p{color:#8b949e;font-size:15px}
+@media(max-width:768px){.hero{margin:-24px -16px 0;padding:120px 16px 80px}.hiw-sec{margin:0 -16px;padding:80px 16px}.cta-sec{margin:60px -16px 0;padding:80px 16px}.step-line{display:none}.dash-hero{flex-direction:column;align-items:flex-start}}
+</style>
+
+<script>
+function animateCounter(el) {
+  const target = parseInt(el.dataset.target) || 0;
+  if (target === 0) { el.textContent = '0'; return; }
+  let cur = 0;
+  const dur = 1800, steps = 60, inc = target / steps;
+  const t = setInterval(() => {
+    cur = Math.min(cur + inc, target);
+    el.textContent = Math.floor(cur).toLocaleString();
+    if (cur >= target) clearInterval(t);
+  }, dur / steps);
+}
+document.querySelectorAll('.hstat-n[data-target]').forEach(el => {
+  setTimeout(() => animateCounter(el), 600);
+});
+</script>
+{% endblock %}

@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+{% block title %}Users - Admin{% endblock %}
+{% block content %}
+
+<div style="margin-bottom:24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+  <div>
+    <a href="{% url 'admin_dashboard' %}" style="color:var(--muted);text-decoration:none;font-size:14px;">← Dashboard</a>
+    <h1 class="gradient-text" style="font-size:26px;font-weight:800;margin-top:8px;">👥 All Users ({{ users.count }})</h1>
+  </div>
+</div>
+
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>User</th>
+        <th>Email</th>
+        <th>Projects</th>
+        <th>Files</th>
+        <th>Joined</th>
+        <th>Status</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for u in users %}
+      <tr>
+        <td>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <div style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0;">{{ u.username|first|upper }}</div>
+            <div>
+              <div style="font-weight:600;font-size:14px;">{{ u.username }}</div>
+              {% if u.is_superuser %}<span class="badge badge-purple" style="font-size:10px;">Admin</span>{% endif %}
+            </div>
+          </div>
+        </td>
+        <td style="color:var(--muted);font-size:13px;">{{ u.email|default:"—" }}</td>
+        <td>{{ u.folder_count }}</td>
+        <td>{{ u.file_count }}</td>
+        <td style="color:var(--muted);font-size:13px;">{{ u.date_joined|date:"M d, Y" }}</td>
+        <td>
+          {% if u.is_active %}<span class="badge badge-green">Active</span>{% else %}<span class="badge badge-gray">Inactive</span>{% endif %}
+        </td>
+        <td>
+          <div style="display:flex;gap:6px;">
+            <a href="{% url 'admin_user_detail' u.id %}" class="btn btn-sm">View</a>
+            {% if not u.is_superuser %}
+              <form method="post" action="{% url 'admin_toggle_user_status' u.id %}" style="display:inline;">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-sm">{% if u.is_active %}Deactivate{% else %}Activate{% endif %}</button>
+              </form>
+            {% endif %}
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

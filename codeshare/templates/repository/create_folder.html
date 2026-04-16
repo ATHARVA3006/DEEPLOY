@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% block title %}{% if editing %}Edit{% else %}New{% endif %} Project - Deployer{% endblock %}
+{% block content %}
+<div style="max-width:600px;margin:0 auto;">
+  <div style="margin-bottom:28px;">
+    <h1 class="gradient-text" style="font-size:28px;font-weight:800;margin-bottom:6px;">
+      {% if editing %}✏️ Edit Project{% else %}✨ New Project{% endif %}
+    </h1>
+    <p style="color:var(--muted);">{% if editing %}Update your project details{% else %}Create a new project to upload your files{% endif %}</p>
+  </div>
+  <div class="glass" style="padding:32px;border-radius:18px;">
+    <form method="post">
+      {% csrf_token %}
+      {% for field in form %}
+        <div class="form-group">
+          <label class="form-label">{{ field.label }}</label>
+          {{ field }}
+          {% if field.errors %}
+            {% for error in field.errors %}<p style="color:#f85149;font-size:13px;margin-top:4px;">{{ error }}</p>{% endfor %}
+          {% endif %}
+        </div>
+      {% endfor %}
+      <div style="display:flex;gap:12px;margin-top:8px;">
+        <button type="submit" class="btn btn-primary" style="flex:1;padding:13px;font-size:15px;">
+          {% if editing %}💾 Save Changes{% else %}🚀 Create & Upload Files{% endif %}
+        </button>
+        <a href="{% if editing %}{% url 'folder_detail' folder.id %}{% else %}{% url 'home' %}{% endif %}" class="btn" style="padding:13px 20px;">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

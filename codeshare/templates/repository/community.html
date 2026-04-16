@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+{% block title %}Community - Deployer{% endblock %}
+{% block content %}
+
+<div style="margin-bottom:32px;">
+  <h1 class="gradient-text" style="font-size:32px;font-weight:800;margin-bottom:8px;">🌍 Community Projects</h1>
+  <p style="color:var(--muted);">Discover what developers are building and sharing</p>
+</div>
+
+<!-- Search -->
+<form method="get" style="margin-bottom:32px;display:flex;gap:12px;">
+  <input type="text" name="q" value="{{ query }}" class="form-input" placeholder="🔍 Search projects, tags, descriptions..." style="flex:1;">
+  <button type="submit" class="btn btn-primary" style="padding:11px 20px;">Search</button>
+  {% if query %}<a href="{% url 'community' %}" class="btn" style="padding:11px 16px;">✕ Clear</a>{% endif %}
+</form>
+
+{% if query %}
+  <p style="color:var(--muted);margin-bottom:20px;font-size:14px;">{{ folders.count }} result{{ folders.count|pluralize }} for "<strong style="color:var(--text);">{{ query }}</strong>"</p>
+{% endif %}
+
+{% if folders %}
+<div class="community-grid">
+  {% for folder in folders %}
+  <div class="community-card">
+    <a href="{% url 'folder_detail' folder.id %}" class="card-title">📂 {{ folder.name }}</a>
+    <p class="card-description">{{ folder.description|default:"No description provided"|truncatechars:100 }}</p>
+    {% if folder.tags %}
+      <div style="margin-bottom:12px;display:flex;gap:6px;flex-wrap:wrap;">
+        {% for tag in folder.tags.split %}
+          <span class="badge badge-blue" style="font-size:10px;">{{ tag|cut:"," }}</span>
+        {% endfor %}
+      </div>
+    {% endif %}
+    <div class="card-meta">
+      <span>👤 {{ folder.owner.username }}</span>
+      <span>📁 {{ folder.files.count }} files</span>
+      <span>👁 {{ folder.visits }}</span>
+      <span>📅 {{ folder.created_at|date:"M d, Y" }}</span>
+    </div>
+    <div style="margin-top:14px;display:flex;gap:8px;">
+      <a href="{% url 'folder_detail' folder.id %}" class="btn btn-sm" style="flex:1;text-align:center;">View Project</a>
+      {% if folder.files.filter %}
+        {% with html_count=folder.files.all|length %}
+          {% if html_count > 0 %}
+            <a href="{% url 'preview_website' folder.id %}" class="btn btn-primary btn-sm">🌐 Preview</a>
+          {% endif %}
+        {% endwith %}
+      {% endif %}
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div style="text-align:center;padding:80px 20px;background:var(--surface);border:1px dashed var(--border);border-radius:18px;">
+  <div style="font-size:64px;margin-bottom:16px;">🔍</div>
+  <h2 style="font-size:22px;margin-bottom:8px;">{% if query %}No results found{% else %}No projects yet{% endif %}</h2>
+  <p style="color:var(--muted);margin-bottom:20px;">{% if query %}Try a different search term{% else %}Be the first to share a project!{% endif %}</p>
+  {% if user.is_authenticated %}
+    <a href="{% url 'create_folder' %}" class="btn btn-primary">✨ Create First Project</a>
+  {% else %}
+    <a href="{% url 'register' %}" class="btn btn-primary">🚀 Get Started</a>
+  {% endif %}
+</div>
+{% endif %}
+{% endblock %}

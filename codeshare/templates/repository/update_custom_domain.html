@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% block title %}Custom Domain - Deployer{% endblock %}
+{% block content %}
+<div style="max-width:520px;margin:0 auto;">
+  <div style="margin-bottom:24px;">
+    <a href="{% url 'user_settings' %}" style="color:var(--muted);text-decoration:none;font-size:14px;">← Settings</a>
+    <h1 class="gradient-text" style="font-size:26px;font-weight:800;margin-top:12px;margin-bottom:6px;">🌐 Custom Domain</h1>
+    <p style="color:var(--muted);">Set a custom domain for your projects ({{ subscription.plan|title }} plan)</p>
+  </div>
+  <div class="glass" style="padding:32px;border-radius:18px;">
+    <form method="post">
+      {% csrf_token %}
+      <div class="form-group">
+        <label class="form-label">Domain Name</label>
+        <input type="text" name="custom_domain" class="form-input" value="{{ subscription.custom_domain|default:'' }}" placeholder="yourdomain.com">
+        <p style="color:var(--muted);font-size:12px;margin-top:6px;">Enter your domain without https:// (e.g. mysite.com)</p>
+      </div>
+      <div style="display:flex;gap:12px;">
+        <button type="submit" class="btn btn-primary" style="flex:1;padding:13px;">💾 Save Domain</button>
+        <a href="{% url 'user_settings' %}" class="btn" style="padding:13px 20px;">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

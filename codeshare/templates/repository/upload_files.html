@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+{% block title %}Upload Files - {{ folder.name }}{% endblock %}
+{% block content %}
+<div style="max-width:700px;margin:0 auto;">
+  <div style="margin-bottom:28px;">
+    <a href="{% url 'folder_detail' folder.id %}" style="color:var(--muted);text-decoration:none;font-size:14px;">← Back to {{ folder.name }}</a>
+    <h1 class="gradient-text" style="font-size:28px;font-weight:800;margin-top:12px;margin-bottom:6px;">📤 Upload Files</h1>
+    <p style="color:var(--muted);">Upload files to <strong style="color:var(--text);">{{ folder.name }}</strong></p>
+  </div>
+
+  <div class="glass" style="padding:32px;border-radius:18px;">
+    <form method="post" enctype="multipart/form-data" id="uploadForm">
+      {% csrf_token %}
+      <div class="upload-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+        <div class="upload-zone-icon">📁</div>
+        <h3>Drop files here or click to browse</h3>
+        <p>Upload HTML, CSS, JS, images, and more. Max 50MB per file.</p>
+        <input type="file" id="fileInput" name="files" multiple style="display:none" onchange="handleFiles(this.files)">
+      </div>
+
+      <div id="fileList" style="margin-top:20px;display:none;">
+        <h3 style="font-size:16px;font-weight:700;margin-bottom:12px;">Selected Files:</h3>
+        <div id="fileItems"></div>
+      </div>
+
+      <div style="display:flex;gap:12px;margin-top:24px;">
+        <button type="submit" class="btn btn-primary" style="flex:1;padding:13px;font-size:15px;" id="uploadBtn">
+          🚀 Upload Files
+        </button>
+        <a href="{% url 'folder_detail' folder.id %}" class="btn" style="padding:13px 20px;">Skip</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+const dropZone = document.getElementById('dropZone');
+const fileInput = document.getElementById('fileInput');
+const fileList = document.getElementById('fileList');
+const fileItems = document.getElementById('fileItems');
+
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('drag-over');
+  handleFiles(e.dataTransfer.files);
+  // Transfer to input
+  const dt = new DataTransfer();
+  Array.from(e.dataTransfer.files).forEach(f => dt.items.add(f));
+  fileInput.files = dt.files;
+});
+
+function handleFiles(files) {
+  if (!files.length) return;
+  fileList.style.display = 'block';
+  fileItems.innerHTML = '';
+  Array.from(files).forEach(f => {
+    const div = document.createElement('div');
+    div.className = 'file-item';
+    div.innerHTML = `<span style="font-size:18px;">${getIcon(f.name)}</span>
+      <span class="file-name" style="flex:1;">${f.name}</span>
+      <span style="color:var(--muted);font-size:12px;">${(f.size/1024).toFixed(1)} KB</span>`;
+    fileItems.appendChild(div);
+  });
+}
+
+function getIcon(name) {
+  const ext = name.split('.').pop().toLowerCase();
+  const icons = {html:'🌐',css:'🎨',js:'⚡',py:'🐍',json:'📋',md:'📝',png:'🖼',jpg:'🖼',jpeg:'🖼',gif:'🖼',svg:'🎭',txt:'📄',pdf:'📕',zip:'📦'};
+  return icons[ext] || '📄';
+}
+
+document.getElementById('uploadForm').addEventListener('submit', () => {
+  document.getElementById('uploadBtn').textContent = '⏳ Uploading...';
+  document.getElementById('uploadBtn').disabled = true;
+});
+</script>
+{% endblock %}

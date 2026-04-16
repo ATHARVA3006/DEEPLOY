@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% block title %}Admin Login - Deployer{% endblock %}
+{% block content %}
+<div style="max-width:440px;margin:40px auto;">
+  <div class="glass" style="padding:40px;border-radius:20px;">
+    <div style="text-align:center;margin-bottom:32px;">
+      <div style="font-size:56px;margin-bottom:12px;">🛡️</div>
+      <h1 class="gradient-text" style="font-size:26px;margin-bottom:6px;">Admin Access</h1>
+      <p style="color:var(--muted);font-size:14px;">Restricted to administrators only</p>
+    </div>
+    <form method="post">
+      {% csrf_token %}
+      <div class="form-group">
+        <label class="form-label">👤 Username</label>
+        <input type="text" name="username" class="form-input" required placeholder="Admin username" autofocus>
+      </div>
+      <div class="form-group">
+        <label class="form-label">🔑 Password</label>
+        <input type="password" name="password" class="form-input" required placeholder="Admin password">
+      </div>
+      <button type="submit" class="btn btn-primary w-full" style="padding:13px;font-size:15px;">🛡️ Login as Admin</button>
+    </form>
+    <div style="text-align:center;margin-top:20px;">
+      <a href="{% url 'home' %}" style="color:var(--muted);font-size:13px;text-decoration:none;">← Back to Home</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

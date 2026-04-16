@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+{% block title %}{{ file.name }} - Deployer{% endblock %}
+{% block content %}
+
+<div style="margin-bottom:20px;">
+  <a href="{% url 'folder_detail' file.folder.id %}" style="color:var(--muted);text-decoration:none;font-size:14px;">← {{ file.folder.name }}</a>
+</div>
+
+<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;margin-bottom:28px;">
+  <div>
+    <h1 style="font-size:24px;font-weight:800;margin-bottom:6px;">
+      {% if file.is_image %}🖼{% elif file.get_extension == '.html' %}🌐{% elif file.get_extension == '.css' %}🎨{% elif file.get_extension == '.js' %}⚡{% else %}📄{% endif %}
+      {{ file.name }}
+    </h1>
+    <div style="display:flex;gap:14px;font-size:13px;color:var(--muted);">
+      <span>📦 {{ file.size_kb }} KB</span>
+      <span>⬇ {{ file.downloads }} downloads</span>
+      <span>📅 {{ file.uploaded_at|date:"M d, Y" }}</span>
+    </div>
+  </div>
+  <div style="display:flex;gap:10px;flex-wrap:wrap;">
+    {% if file.get_extension == '.html' or file.get_extension == '.htm' %}
+      <a href="{% url 'preview_file_as_website' file.id %}" class="btn btn-primary">🌐 Preview</a>
+    {% endif %}
+    <a href="{% url 'download_file' file.id %}" class="btn">⬇ Download</a>
+    {% if user == file.folder.owner %}
+      <form method="post" action="{% url 'delete_file' file.id %}" style="display:inline;" onsubmit="return confirm('Delete this file?')">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger btn-sm">🗑 Delete</button>
+      </form>
+    {% endif %}
+  </div>
+</div>
+
+{% if file.is_image %}
+  <div style="text-align:center;padding:24px;background:var(--surface);border:1px solid var(--border);border-radius:14px;">
+    <img src="{{ file.file.url }}" alt="{{ file.name }}" style="max-width:100%;max-height:600px;border-radius:8px;">
+  </div>
+{% elif content %}
+  <div class="code-viewer">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border);">
+      <span style="font-size:13px;color:var(--muted);">{{ file.name }}</span>
+      <button onclick="copyCode()" class="btn btn-sm">📋 Copy</button>
+    </div>
+    <pre class="code-content" id="codeContent">{{ content }}</pre>
+  </div>
+{% else %}
+  <div style="text-align:center;padding:60px;background:var(--surface);border:1px solid var(--border);border-radius:14px;">
+    <div style="font-size:48px;margin-bottom:12px;">📄</div>
+    <p style="color:var(--muted);">Binary file — <a href="{% url 'download_file' file.id %}" class="btn btn-primary btn-sm" style="margin-left:8px;">⬇ Download to view</a></p>
+  </div>
+{% endif %}
+
+<script>
+function copyCode() {
+  const code = document.getElementById('codeContent').textContent;
+  navigator.clipboard.writeText(code).then(() => {
+    const btn = event.target;
+    btn.textContent = '✅ Copied!';
+    setTimeout(() => btn.textContent = '📋 Copy', 2000);
+  });
+}
+</script>
+{% endblock %}
