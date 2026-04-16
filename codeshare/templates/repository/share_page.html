@@ -319,9 +319,10 @@
     </div>
     <div class="action-row">
       {% if main_html %}
-        <a href="/file/{{ main_html.id }}/serve/" target="_blank" class="btn btn-primary">🌐 Open Live Site</a>
+        <a href="/share/{{ folder.id }}/" target="_blank" class="btn btn-primary">🌐 Open Live Site</a>
       {% endif %}
       <button onclick="copyShareLink()" class="btn" id="copyBtn">🔗 Copy Share Link</button>
+      <a href="/share/{{ folder.id }}/info/" class="btn btn-sm" style="font-size:12px;">📄 Info Page</a>
     </div>
   </div>
 </div>

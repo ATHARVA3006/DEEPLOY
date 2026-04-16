@@ -47,11 +47,14 @@
 <!-- Share Link -->
 <div class="share-box">
   <h3>🔗 Shareable Link</h3>
-  <p style="color:var(--muted);font-size:13px;margin-bottom:8px;">Anyone with this link can view the project — no login needed</p>
+  <p style="color:var(--muted);font-size:13px;margin-bottom:8px;">
+    Anyone with this link sees your <strong style="color:var(--text);">live website directly</strong> — no login needed
+  </p>
   <code id="shareLink">{{ share_link }}</code>
   <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;">
     <button onclick="copyLink()" class="btn btn-sm">📋 Copy Link</button>
-    <a href="{{ share_link }}" target="_blank" class="btn btn-sm btn-primary">↗ Open Share Page</a>
+    <a href="{{ share_link }}" target="_blank" class="btn btn-sm btn-primary">↗ Open Live Site</a>
+    <a href="/share/{{ folder.id }}/info/" target="_blank" class="btn btn-sm">📄 Project Info Page</a>
   </div>
 </div>
 

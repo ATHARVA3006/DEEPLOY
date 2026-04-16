@@ -448,7 +448,7 @@ def update_custom_domain(request):
 
 
 def share_page(request, folder_id):
-    """Clean public share page — no account UI, just the project."""
+    """Clean public share page — directly serves website if HTML exists, otherwise shows file list."""
     folder = get_object_or_404(Folder, id=folder_id)
 
     if not folder.is_public:
@@ -459,6 +459,96 @@ def share_page(request, folder_id):
     folder.save(update_fields=['visits'])
 
     files = folder.files.all()
+    html_files = files.filter(name__endswith='.html')
+    
+    # Find main HTML file
+    main_html = None
+    for f in html_files:
+        if f.name.lower() == 'index.html':
+            main_html = f
+            break
+    if not main_html and html_files.exists():
+        main_html = html_files.first()
+
+    # If HTML exists, directly serve the rendered website
+    if main_html:
+        try:
+            content = main_html.file.read().decode('utf-8', errors='replace')
+            
+            # Inline all CSS and JS from the folder
+            css_files = folder.files.filter(file_type__in=['.css', 'css'])
+            js_files = folder.files.filter(file_type__in=['.js', 'js'])
+
+            inline_css = ''
+            for css in css_files:
+                try:
+                    inline_css += css.file.read().decode('utf-8', errors='replace') + '\n'
+                except Exception:
+                    pass
+
+            inline_js = ''
+            for js in js_files:
+                try:
+                    inline_js += js.file.read().decode('utf-8', errors='replace') + '\n'
+                except Exception:
+                    pass
+
+            # Remove external CSS/JS links
+            content = re.sub(r'<link[^>]+rel=["\']stylesheet["\'][^>]*>', '', content, flags=re.IGNORECASE)
+            content = re.sub(r'<link[^>]+href=["\'][^"\']*\.css["\'][^>]*>', '', content, flags=re.IGNORECASE)
+            content = re.sub(r'<script[^>]+src=["\'][^"\']*\.js["\'][^>]*>\s*</script>', '', content, flags=re.IGNORECASE)
+
+            # Inject inline CSS and JS
+            css_tag = f'<style>{inline_css}</style>' if inline_css else ''
+            js_tag = f'<script>{inline_js}</script>' if inline_js else ''
+
+            if '</head>' in content:
+                content = content.replace('</head>', f'{css_tag}</head>', 1)
+            else:
+                content = css_tag + content
+
+            if '</body>' in content:
+                content = content.replace('</body>', f'{js_tag}</body>', 1)
+            else:
+                content = content + js_tag
+
+            # Add a small footer badge
+            badge = '''
+            <div style="position:fixed;bottom:16px;right:16px;background:rgba(13,17,23,0.95);backdrop-filter:blur(10px);border:1px solid rgba(88,166,255,0.3);border-radius:12px;padding:8px 14px;font-family:-apple-system,sans-serif;font-size:12px;color:#e6edf3;box-shadow:0 4px 12px rgba(0,0,0,0.4);z-index:999999;">
+                <a href="https://deployer.app" target="_blank" style="color:#58a6ff;text-decoration:none;display:flex;align-items:center;gap:6px;">
+                    🚀 <span>Deployed on Deployer</span>
+                </a>
+            </div>
+            '''
+            if '</body>' in content:
+                content = content.replace('</body>', f'{badge}</body>', 1)
+            else:
+                content = content + badge
+
+            response = HttpResponse(content, content_type='text/html; charset=utf-8')
+            response['X-Frame-Options'] = 'SAMEORIGIN'
+            return response
+
+        except Exception:
+            pass  # Fall through to file list view
+
+    # No HTML or error — show file list page
+    user_links = folder.owner.links.all()
+    return render(request, 'repository/share_page.html', {
+        'folder': folder,
+        'files': files,
+        'user_links': user_links,
+        'main_html': main_html,
+        'share_url': request.build_absolute_uri(),
+    })
+
+
+def share_info(request, folder_id):
+    """Project info page — files list, creator, share link."""
+    folder = get_object_or_404(Folder, id=folder_id)
+    if not folder.is_public:
+        return render(request, 'repository/share_private.html', {'folder': folder})
+    files = folder.files.all()
     user_links = folder.owner.links.all()
     html_files = files.filter(name__endswith='.html')
     main_html = None
@@ -468,13 +558,12 @@ def share_page(request, folder_id):
             break
     if not main_html and html_files.exists():
         main_html = html_files.first()
-
     return render(request, 'repository/share_page.html', {
         'folder': folder,
         'files': files,
         'user_links': user_links,
         'main_html': main_html,
-        'share_url': request.build_absolute_uri(),
+        'share_url': request.build_absolute_uri(f'/share/{folder_id}/'),
     })
 
 

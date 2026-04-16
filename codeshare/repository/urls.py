@@ -27,8 +27,9 @@ urlpatterns = [
     path('subscription/success/<str:plan>/', views.payment_success, name='payment_success'),
     path('subscription/downgrade/', views.downgrade_to_free, name='downgrade_to_free'),
     path('subscription/custom-domain/', views.update_custom_domain, name='update_custom_domain'),
-    # Public share page — clean link for sharing
+    # Public share — directly serves website or file list
     path('share/<uuid:folder_id>/', views.share_page, name='share_page'),
+    path('share/<uuid:folder_id>/info/', views.share_info, name='share_info'),
     path('folder/<uuid:folder_id>/preview/', views.preview_website, name='preview_website'),
     path('file/<int:file_id>/preview/', views.preview_file_as_website, name='preview_file_as_website'),
     path('file/<int:file_id>/serve/', views.serve_website_file, name='serve_website_file'),
