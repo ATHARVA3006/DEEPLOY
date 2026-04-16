@@ -3,16 +3,25 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth import login, update_session_auth_hash
 from django.contrib.auth.forms import UserCreationForm, PasswordChangeForm
 from django.contrib.auth.models import User
-from django.http import FileResponse, Http404, HttpResponse
+from django.http import FileResponse, Http404, HttpResponse, JsonResponse
 from django.contrib import messages
 from django.db.models import Count, Sum, Q
 from django.utils import timezone
+from django.views.decorators.csrf import csrf_exempt
+from django.conf import settings
 from datetime import timedelta
 from .models import Folder, File, UserLink, Subscription, UserProfile
 from .forms import FolderForm, ProfileUpdateForm, UserLinkForm, UserProfileForm
 import os
 import mimetypes
 import re
+import json
+
+# Razorpay plan pricing (in paise — INR × 100)
+PLAN_PRICES = {
+    'pro':     {'amount': 74900,  'label': '₹749/month', 'name': 'Pro Plan'},
+    'premium': {'amount': 224900, 'label': '₹2,249/month', 'name': 'Premium Plan'},
+}
 
 
 def home(request):
@@ -287,6 +296,98 @@ def upgrade_subscription(request, plan):
     subscription.save()
     messages.success(request, f'Successfully switched to {plan.title()} plan!')
     return redirect('user_settings')
+
+
+@login_required
+def create_payment_order(request, plan):
+    """Create a Razorpay order and return order details."""
+    if plan not in PLAN_PRICES:
+        return JsonResponse({'error': 'Invalid plan'}, status=400)
+
+    try:
+        import razorpay
+        client = razorpay.Client(auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET))
+
+        price = PLAN_PRICES[plan]
+        order = client.order.create({
+            'amount': price['amount'],
+            'currency': 'INR',
+            'payment_capture': 1,
+            'notes': {
+                'user_id': str(request.user.id),
+                'username': request.user.username,
+                'plan': plan,
+            }
+        })
+
+        return JsonResponse({
+            'order_id': order['id'],
+            'amount': price['amount'],
+            'currency': 'INR',
+            'key': settings.RAZORPAY_KEY_ID,
+            'plan': plan,
+            'plan_name': price['name'],
+            'user_name': request.user.get_full_name() or request.user.username,
+            'user_email': request.user.email or '',
+        })
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+@csrf_exempt
+@login_required
+def verify_payment(request):
+    """Verify Razorpay payment signature and activate subscription."""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'POST required'}, status=405)
+
+    try:
+        import razorpay
+        data = json.loads(request.body)
+
+        client = razorpay.Client(auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET))
+
+        # Verify signature
+        client.utility.verify_payment_signature({
+            'razorpay_order_id': data['razorpay_order_id'],
+            'razorpay_payment_id': data['razorpay_payment_id'],
+            'razorpay_signature': data['razorpay_signature'],
+        })
+
+        # Activate subscription
+        plan = data.get('plan')
+        if plan not in ['pro', 'premium']:
+            return JsonResponse({'error': 'Invalid plan'}, status=400)
+
+        subscription, _ = Subscription.objects.get_or_create(user=request.user)
+        subscription.plan = plan
+        subscription.is_active = True
+        subscription.save()
+
+        return JsonResponse({'success': True, 'plan': plan})
+
+    except Exception as e:
+        return JsonResponse({'error': 'Payment verification failed', 'detail': str(e)}, status=400)
+
+
+@login_required
+def payment_success(request, plan):
+    """Show payment success page."""
+    subscription, _ = Subscription.objects.get_or_create(user=request.user)
+    return render(request, 'repository/payment_success.html', {
+        'plan': plan,
+        'subscription': subscription,
+    })
+
+
+@login_required
+def downgrade_to_free(request):
+    if request.method == 'POST':
+        subscription, _ = Subscription.objects.get_or_create(user=request.user)
+        subscription.plan = 'free'
+        subscription.save()
+        messages.success(request, 'Downgraded to Free plan.')
+    return redirect('subscription_plans')
 
 
 @login_required

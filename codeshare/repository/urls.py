@@ -22,6 +22,10 @@ urlpatterns = [
     path('settings/delete-link/<int:link_id>/', views.delete_link, name='delete_link'),
     path('subscription/', views.subscription_plans, name='subscription_plans'),
     path('subscription/upgrade/<str:plan>/', views.upgrade_subscription, name='upgrade_subscription'),
+    path('subscription/order/<str:plan>/', views.create_payment_order, name='create_payment_order'),
+    path('subscription/verify/', views.verify_payment, name='verify_payment'),
+    path('subscription/success/<str:plan>/', views.payment_success, name='payment_success'),
+    path('subscription/downgrade/', views.downgrade_to_free, name='downgrade_to_free'),
     path('subscription/custom-domain/', views.update_custom_domain, name='update_custom_domain'),
     # Public share page — clean link for sharing
     path('share/<uuid:folder_id>/', views.share_page, name='share_page'),
