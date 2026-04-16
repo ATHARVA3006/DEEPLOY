@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ folder.name }} — Deployer</title>
+
+  <!-- Open Graph for link previews (WhatsApp, Twitter, Discord etc.) -->
+  <meta property="og:title" content="{{ folder.name }}">
+  <meta property="og:description" content="{{ folder.description|default:'Shared via Deployer 🚀' }}">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="{{ share_url }}">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="{{ folder.name }}">
+  <meta name="twitter:description" content="{{ folder.description|default:'Shared via Deployer 🚀' }}">
+
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --bg: #0d1117; --bg2: #161b22; --surface: rgba(22,27,34,0.8);
+      --border: rgba(48,54,61,0.7); --text: #e6edf3; --muted: #8b949e;
+      --accent: #58a6ff; --accent2: #a371f7; --green: #2ea043;
+    }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+      background: linear-gradient(135deg, var(--bg) 0%, var(--bg2) 100%);
+      color: var(--text);
+      min-height: 100vh;
+    }
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 3px; }
+
+    /* ── Top bar ── */
+    .topbar {
+      background: rgba(13,17,23,0.9);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+    .brand {
+      font-size: 18px;
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      text-decoration: none;
+    }
+    .topbar-right { display: flex; gap: 10px; align-items: center; }
+    .btn {
+      padding: 8px 16px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      cursor: pointer;
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 500;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .btn:hover { border-color: var(--accent); color: var(--accent); transform: translateY(-1px); }
+    .btn-primary { background: linear-gradient(135deg, var(--accent), #388bfd); border: none; color: #fff; }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(88,166,255,0.35); color: #fff; }
+    .btn-sm { padding: 6px 12px; font-size: 12px; }
+
+    /* ── Hero ── */
+    .hero {
+      padding: 56px 24px 40px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse at 50% 0%, rgba(88,166,255,0.1) 0%, transparent 60%);
+      pointer-events: none;
+    }
+    .hero-inner { position: relative; z-index: 1; max-width: 700px; margin: 0 auto; }
+    .project-icon {
+      width: 72px; height: 72px;
+      border-radius: 18px;
+      background: linear-gradient(135deg, rgba(88,166,255,0.2), rgba(163,113,247,0.2));
+      border: 1px solid rgba(88,166,255,0.3);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 36px;
+      margin: 0 auto 20px;
+    }
+    .project-name {
+      font-size: clamp(24px, 5vw, 40px);
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      margin-bottom: 12px;
+      background: linear-gradient(135deg, var(--text), var(--accent));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .project-desc { color: var(--muted); font-size: 16px; line-height: 1.6; margin-bottom: 20px; }
+    .meta-row {
+      display: flex; gap: 20px; justify-content: center; flex-wrap: wrap;
+      font-size: 13px; color: var(--muted); margin-bottom: 28px;
+    }
+    .meta-item { display: flex; align-items: center; gap: 5px; }
+    .badge {
+      display: inline-block; padding: 3px 10px; border-radius: 20px;
+      font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
+    }
+    .badge-green { background: rgba(46,160,67,0.15); color: #3fb950; border: 1px solid rgba(46,160,67,0.3); }
+    .action-row { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+
+    /* ── Share box ── */
+    .share-box {
+      max-width: 600px;
+      margin: 0 auto 40px;
+      padding: 16px 20px;
+      background: rgba(88,166,255,0.06);
+      border: 1px solid rgba(88,166,255,0.2);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .share-url {
+      flex: 1;
+      font-family: 'SF Mono', monospace;
+      font-size: 13px;
+      color: var(--accent);
+      word-break: break-all;
+      min-width: 0;
+    }
+
+    /* ── Preview frame ── */
+    .preview-section {
+      max-width: 1100px;
+      margin: 0 auto 48px;
+      padding: 0 24px;
+    }
+    .preview-label {
+      font-size: 13px; font-weight: 600; color: var(--muted);
+      text-transform: uppercase; letter-spacing: 1px;
+      margin-bottom: 12px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .browser-chrome {
+      background: rgba(13,17,23,0.9);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    }
+    .browser-bar {
+      padding: 10px 16px;
+      background: rgba(22,27,34,0.95);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .dots { display: flex; gap: 6px; }
+    .dot { width: 12px; height: 12px; border-radius: 50%; }
+    .dot-r { background: #f85149; }
+    .dot-y { background: #d29922; }
+    .dot-g { background: #2ea043; }
+    .url-bar {
+      flex: 1;
+      background: rgba(13,17,23,0.8);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 5px 12px;
+      font-size: 12px;
+      color: var(--muted);
+      font-family: 'SF Mono', monospace;
+    }
+    .preview-iframe {
+      width: 100%;
+      height: 65vh;
+      border: none;
+      display: block;
+      background: #fff;
+    }
+
+    /* ── Files ── */
+    .files-section {
+      max-width: 800px;
+      margin: 0 auto 48px;
+      padding: 0 24px;
+    }
+    .section-title {
+      font-size: 16px; font-weight: 700; margin-bottom: 14px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .file-list {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .file-item {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      transition: background 0.15s;
+    }
+    .file-item:last-child { border-bottom: none; }
+    .file-item:hover { background: rgba(88,166,255,0.05); }
+    .file-name { color: var(--accent); text-decoration: none; font-size: 14px; font-weight: 500; flex: 1; }
+    .file-name:hover { color: #79c0ff; }
+    .file-size { color: var(--muted); font-size: 12px; white-space: nowrap; }
+
+    /* ── Creator links ── */
+    .creator-section {
+      max-width: 800px;
+      margin: 0 auto 48px;
+      padding: 0 24px;
+    }
+    .creator-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .creator-avatar {
+      width: 48px; height: 48px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px; font-weight: 800; color: #fff;
+      flex-shrink: 0;
+    }
+    .creator-info { flex: 1; }
+    .creator-name { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+    .creator-links { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+
+    /* ── Footer ── */
+    .footer {
+      text-align: center;
+      padding: 32px 24px;
+      border-top: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .footer a { color: var(--accent); text-decoration: none; }
+
+    /* ── Tabs for multiple HTML files ── */
+    .html-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+    .html-tab {
+      padding: 6px 14px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--muted);
+      font-size: 13px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+    .html-tab:hover, .html-tab.active { border-color: var(--accent); color: var(--accent); background: rgba(88,166,255,0.08); }
+
+    @media (max-width: 600px) {
+      .hero { padding: 40px 16px 28px; }
+      .preview-section, .files-section, .creator-section { padding: 0 16px; }
+      .preview-iframe { height: 50vh; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Top bar -->
+<nav class="topbar">
+  <a href="/" class="brand">🚀 Deployer</a>
+  <div class="topbar-right">
+    {% if user.is_authenticated %}
+      <a href="/create/" class="btn btn-primary btn-sm">✨ New Project</a>
+    {% else %}
+      <a href="/login/" class="btn btn-sm">Login</a>
+      <a href="/register/" class="btn btn-primary btn-sm">Get Started Free</a>
+    {% endif %}
+  </div>
+</nav>
+
+<!-- Hero -->
+<div class="hero">
+  <div class="hero-inner">
+    <div class="project-icon">📂</div>
+    <h1 class="project-name">{{ folder.name }}</h1>
+    {% if folder.description %}
+      <p class="project-desc">{{ folder.description }}</p>
+    {% endif %}
+    <div class="meta-row">
+      <span class="meta-item">👤 {{ folder.owner.username }}</span>
+      <span class="meta-item">📁 {{ files.count }} file{{ files.count|pluralize }}</span>
+      <span class="meta-item">👁 {{ folder.visits }} view{{ folder.visits|pluralize }}</span>
+      <span class="meta-item">📅 {{ folder.created_at|date:"M d, Y" }}</span>
+      {% if folder.tags %}
+        <span class="meta-item">🏷 {{ folder.tags }}</span>
+      {% endif %}
+      <span class="badge badge-green">Public</span>
+    </div>
+    <div class="action-row">
+      {% if main_html %}
+        <a href="/file/{{ main_html.id }}/serve/" target="_blank" class="btn btn-primary">🌐 Open Live Site</a>
+      {% endif %}
+      <button onclick="copyShareLink()" class="btn" id="copyBtn">🔗 Copy Share Link</button>
+    </div>
+  </div>
+</div>
+
+<!-- Share URL bar -->
+<div style="max-width:600px;margin:0 auto 36px;padding:0 24px;">
+  <div class="share-box">
+    <span style="font-size:16px;">🔗</span>
+    <span class="share-url" id="shareUrl">{{ share_url }}</span>
+    <button onclick="copyShareLink()" class="btn btn-sm" id="copyBtn2">Copy</button>
+  </div>
+</div>
+
+<!-- Live Preview -->
+{% if main_html %}
+<div class="preview-section">
+  <div class="preview-label">
+    🌐 Live Preview
+    {% with html_files=files|dictsort:"name" %}
+    {% endwith %}
+  </div>
+
+  <!-- HTML file tabs if multiple -->
+  {% with html_files=folder.files.all %}
+  {% if html_files|length > 1 %}
+  <div class="html-tabs">
+    {% for f in html_files %}
+      {% if f.get_extension == '.html' or f.get_extension == '.htm' %}
+        <a href="#" class="html-tab {% if f == main_html %}active{% endif %}"
+           onclick="switchPreview('{{ f.id }}', this); return false;">{{ f.name }}</a>
+      {% endif %}
+    {% endfor %}
+  </div>
+  {% endif %}
+  {% endwith %}
+
+  <div class="browser-chrome">
+    <div class="browser-bar">
+      <div class="dots">
+        <div class="dot dot-r"></div>
+        <div class="dot dot-y"></div>
+        <div class="dot dot-g"></div>
+      </div>
+      <div class="url-bar" id="urlBar">🔒 deployer.app/share/{{ folder.id }}/</div>
+      <a href="/file/{{ main_html.id }}/serve/" target="_blank" class="btn btn-sm">↗ Full Screen</a>
+    </div>
+    <iframe id="previewFrame" src="/file/{{ main_html.id }}/serve/"
+            class="preview-iframe"
+            title="Live Preview of {{ folder.name }}"
+            sandbox="allow-scripts allow-same-origin allow-forms"></iframe>
+  </div>
+</div>
+{% endif %}
+
+<!-- Files list -->
+<div class="files-section">
+  <div class="section-title">📄 Files ({{ files.count }})</div>
+  <div class="file-list">
+    {% for file in files %}
+    <div class="file-item">
+      <span style="font-size:18px;">
+        {% if file.is_image %}🖼
+        {% elif file.get_extension == '.html' or file.get_extension == '.htm' %}🌐
+        {% elif file.get_extension == '.css' %}🎨
+        {% elif file.get_extension == '.js' %}⚡
+        {% elif file.get_extension == '.py' %}🐍
+        {% elif file.get_extension == '.json' %}📋
+        {% elif file.get_extension == '.md' %}📝
+        {% elif file.get_extension == '.pdf' %}📕
+        {% else %}📄{% endif %}
+      </span>
+      <a href="/file/{{ file.id }}/" class="file-name">{{ file.name }}</a>
+      <span class="file-size">{{ file.size_kb }} KB</span>
+      {% if file.get_extension == '.html' or file.get_extension == '.htm' %}
+        <a href="/file/{{ file.id }}/serve/" target="_blank" class="btn btn-sm">🌐 Preview</a>
+      {% endif %}
+      <a href="/file/{{ file.id }}/download/" class="btn btn-sm">⬇</a>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- Creator card -->
+<div class="creator-section">
+  <div class="section-title">👤 Creator</div>
+  <div class="creator-card">
+    <div class="creator-avatar">{{ folder.owner.username|first|upper }}</div>
+    <div class="creator-info">
+      <div class="creator-name">{{ folder.owner.username }}</div>
+      <div style="color:var(--muted);font-size:13px;">Shared this project on Deployer</div>
+      {% if user_links %}
+      <div class="creator-links">
+        {% for link in user_links %}
+          <a href="{{ link.url }}" target="_blank" rel="noopener" class="btn btn-sm">{{ link.icon }} {{ link.title }}</a>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+    <a href="/community/" class="btn btn-sm">🌍 More Projects</a>
+  </div>
+</div>
+
+<!-- Footer -->
+<footer class="footer">
+  <p>Shared via <a href="/">🚀 Deployer</a> — Upload files, preview websites, share your work.</p>
+  <p style="margin-top:8px;"><a href="/register/">Create your free account →</a></p>
+</footer>
+
+<script>
+function copyShareLink() {
+  const url = document.getElementById('shareUrl').textContent.trim();
+  navigator.clipboard.writeText(url).then(() => {
+    ['copyBtn','copyBtn2'].forEach(id => {
+      const btn = document.getElementById(id);
+      if (btn) { const orig = btn.textContent; btn.textContent = '✅ Copied!'; setTimeout(() => btn.textContent = orig, 2000); }
+    });
+  });
+}
+
+function switchPreview(fileId, tab) {
+  document.getElementById('previewFrame').src = '/file/' + fileId + '/serve/';
+  document.querySelectorAll('.html-tab').forEach(t => t.classList.remove('active'));
+  tab.classList.add('active');
+}
+</script>
+
+</body>
+</html>

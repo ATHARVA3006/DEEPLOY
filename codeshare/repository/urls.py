@@ -23,6 +23,8 @@ urlpatterns = [
     path('subscription/', views.subscription_plans, name='subscription_plans'),
     path('subscription/upgrade/<str:plan>/', views.upgrade_subscription, name='upgrade_subscription'),
     path('subscription/custom-domain/', views.update_custom_domain, name='update_custom_domain'),
+    # Public share page — clean link for sharing
+    path('share/<uuid:folder_id>/', views.share_page, name='share_page'),
     path('folder/<uuid:folder_id>/preview/', views.preview_website, name='preview_website'),
     path('file/<int:file_id>/preview/', views.preview_file_as_website, name='preview_file_as_website'),
     path('file/<int:file_id>/serve/', views.serve_website_file, name='serve_website_file'),

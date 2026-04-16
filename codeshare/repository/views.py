@@ -114,7 +114,7 @@ def folder_detail(request, folder_id):
         'folder': folder,
         'files': files,
         'user_links': user_links,
-        'share_link': request.build_absolute_uri(),
+        'share_link': request.build_absolute_uri(f'/share/{folder.id}/'),
         'has_html_files': files.filter(name__endswith='.html').exists() or files.filter(name__endswith='.htm').exists(),
     })
 
@@ -313,6 +313,37 @@ def update_custom_domain(request):
         return redirect('user_settings')
 
     return render(request, 'repository/update_custom_domain.html', {'subscription': subscription})
+
+
+def share_page(request, folder_id):
+    """Clean public share page — no account UI, just the project."""
+    folder = get_object_or_404(Folder, id=folder_id)
+
+    if not folder.is_public:
+        return render(request, 'repository/share_private.html', {'folder': folder})
+
+    # Count visit
+    folder.visits += 1
+    folder.save(update_fields=['visits'])
+
+    files = folder.files.all()
+    user_links = folder.owner.links.all()
+    html_files = files.filter(name__endswith='.html')
+    main_html = None
+    for f in html_files:
+        if f.name.lower() == 'index.html':
+            main_html = f
+            break
+    if not main_html and html_files.exists():
+        main_html = html_files.first()
+
+    return render(request, 'repository/share_page.html', {
+        'folder': folder,
+        'files': files,
+        'user_links': user_links,
+        'main_html': main_html,
+        'share_url': request.build_absolute_uri(),
+    })
 
 
 def preview_website(request, folder_id):
